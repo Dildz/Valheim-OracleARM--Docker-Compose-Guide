@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+  raspiheim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: raspiheim_local
+    environment:
+      - SERVER_NAME=TheDistrict
+      - WORLD_NAME=District
+      - SERVER_PASS=password
+      - PUBLIC=0
+      - UPDATE=true
+    ports:
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
+      - "27015:27015"
+    volumes:
+      - "../valheim/data:/data:rw"
+      - "../valheim/server:/valheim:rw"
+    restart: unless-stopped

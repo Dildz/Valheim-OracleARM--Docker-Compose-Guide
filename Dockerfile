@@ -1,7 +1,6 @@
 # Use Ubuntu 22.04 as base
 FROM ubuntu:22.04
 
-# Install cURL, Python 3, sudo, unbuffer and the package for "add-apt-repository"
 RUN apt update && apt install -y curl python3 sudo expect-dev software-properties-common
 
 # Download Install FEX script to temp file
@@ -28,15 +27,28 @@ USER steam
 WORKDIR /home/steam/Steam
 
 # Download and extract SteamCMD
-RUN curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
+RUN curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - 
 
 # Copy init-server.sh to container
 COPY --chmod=755 ./init-server.sh /home/steam/init-server.sh
 
 # Set up some default environment variables
-ENV ALWAYS_UPDATE_ON_START=true \
-    MULTITHREAD_ENABLED=true \
-    COMMUNITY_SERVER=false
+ENV SERVER_NAME="Raspiheim" \
+    PUBLIC=0 \
+    WORLD_NAME="RaspiheimWorld" \
+    UPDATE="false" \
+    SERVER_PASS="password" \
+    SAVE_DIR="/data"
+
+# Expose ports needed
+EXPOSE 2456/udp 2457/udp 2458/udp
+
+# Change user back to root
+USER root
+
+# Copy docker-entrypoint.sh to container
+COPY --chmod=755 ./docker-entrypoint.sh /docker-entrypoint.sh
 
 # Run it
-ENTRYPOINT /home/steam/init-server.sh
+ENTRYPOINT ["/bin/sh", "/docker-entrypoint.sh"]
+CMD ["/home/steam/init-server.sh"]

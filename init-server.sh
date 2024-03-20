@@ -1,42 +1,27 @@
 #!/bin/bash
-# Based on server manager from https://github.com/jammsen/docker-palworld-dedicated-server
+
+set -e
+export PATH=/usr/local/bin/:$PATH
 
 function installServer() {
-  FEXBash './steamcmd.sh +force_install_dir "/palworld" +login anonymous +app_update 2394010 validate +quit'
+  FEXBash './steamcmd.sh +@sSteamCmdForcePlatformType linux +force_install_dir /valheim +login anonymous +app_update 896660 validate +quit'
 }
 
 function main() {
-  # TODO: Add auto backup script
-  
-  # Check if we have proper read/write permissions to /palworld
-  if [ ! -r "/palworld" ] || [ ! -w "/palworld" ]; then
-      echo 'ERROR: I do not have read/write permissions to /palworld! Please run "chown -R 1000:1000 palworld/" on host machine, then try again.'
+  # Check if we have proper read/write permissions
+  if [ ! -r "/valheim" ] || [ ! -w "/valheim" ]; then
+      echo 'ERROR: I do not have read/write permissions to /valheim! Please run "chown -R 1000:1000 valheim" on host machine, then try again.'
       exit 1
   fi
 
-  # Check for SteamCMD updates
+    # Check for SteamCMD updates
   echo 'Checking for SteamCMD updates...'
-  FEXBash './steamcmd.sh +quit'
+  FEXBash './steamcmd.sh +login anonymous +quit'
 
   # Check if the server is installed
-  if [ ! -f "/palworld/PalServer.sh" ]; then
-      echo 'Server not found! Installing... (Do not panic if it looks stuck)'
+  if [ ! -f "/valheim/valheim_server.x86_64" ] || [ $UPDATE = "true" ]; then
+      echo 'Installing... (Do not panic if it looks stuck)'
       installServer
-  fi
-  # TODO: Don't run this if it's the first install (It does double checking on files on first install if this is enabled)
-  # If auto updates are enabled, try updating
-  if [ "$ALWAYS_UPDATE_ON_START" == "true" ]; then
-      echo 'Checking for updates... (Do not panic if it looks stuck)'
-      installServer
-  fi
-
-  # Set up command line args from environment variables
-  START_OPTIONS=""
-  if [[ -n "$COMMUNITY_SERVER" ]] && [[ "$COMMUNITY_SERVER" == "true" ]]; then
-      START_OPTIONS="$START_OPTIONS EpicApp=PalServer"
-  fi
-  if [[ -n "$MULTITHREAD_ENABLED" ]] && [[ "$MULTITHREAD_ENABLED" == "true" ]]; then
-      START_OPTIONS="$START_OPTIONS -useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS"
   fi
 
   # Fix for steamclient.so not being found
@@ -45,11 +30,15 @@ function main() {
 
   echo 'Starting server... You can safely ignore Steam errors! (Also the server has pretty much 0 logging, so just try connecting to it)'
 
-  # Go to /palworld
-  cd /palworld
+  # Go to /valheim
+  cd /valheim
 
   # Start server
-  FEXBash "./PalServer.sh $START_OPTIONS"
+  # export templdpath=$LD_LIBRARY_PATH
+  # export LD_LIBRARY_PATH=./linux64:$LD_LIBRARY_PATH
+  # export SteamAppId=892970
+  FEXBash "./valheim_server.x86_64 -nographics -batchmode -name $SERVER_NAME -port 2456 -public $PUBLIC -world $WORLD_NAME -password $SERVER_PASS -savedir $SAVE_DIR" # 2>/dev/null | tee -a "$LOG_FILE"
+  # export LD_LIBRARY_PATH=$templdpath
 }
 
 main
