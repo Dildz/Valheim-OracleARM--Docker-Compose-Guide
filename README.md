@@ -48,7 +48,6 @@ There are environment variables that you can set in the docker-compose.yml file
 - https://github.com/TeriyakiGod/steamcmd-docker-arm64
 - https://github.com/thijsvanloef/palworld-server-docker
 - https://github.com/jammsen/docker-palworld-dedicated-server
-- https://github.com/moby/moby/issues/30053#issuecomment-1077041045 
 
 ## Running multiple instances with separate external IPs on the same server
 
