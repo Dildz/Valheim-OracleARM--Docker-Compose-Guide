@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  valheim2:
+    build:
+      context: ./raspiheim
+      dockerfile: Dockerfile
+    container_name: valheim2
+    environment:
+      - SERVER_NAME=TheDistrict2
+      - WORLD_NAME=District2
+      - SERVER_PASS=password
+      - PUBLIC=0
+      - UPDATE=true
+      - PORT=2456
+    ports:
+      - "10.0.0.58:2456:2456/udp"
+      - "10.0.0.58:2456:2456/tcp"
+    volumes:
+      - "./valheim2/data:/data:rw"
+      - "./valheim2/server:/valheim:rw"
+    restart: unless-stopped

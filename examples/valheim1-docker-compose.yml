@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  valheim1:
+    build:
+      context: ./raspiheim
+      dockerfile: Dockerfile
+    container_name: valheim1
+    environment:
+      - SERVER_NAME=TheDistrict
+      - WORLD_NAME=District
+      - SERVER_PASS=password
+      - PUBLIC=0
+      - UPDATE=true
+      - PORT=2456
+    networks:
+      - valheim1_net
+    ports:
+      - "10.0.0.67:2456:2456/udp"
+      - "10.0.0.67:2456:2456/tcp"
+    volumes:
+      - "./valheim/data:/data:rw"
+      - "./valheim/server:/valheim:rw"
+    restart: unless-stopped
+
+networks:
+  valheim1_net:
+    name: valheim1_net
+    driver: bridge
+    driver_opts:
+      parent: enp1s0
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    ipam:
+      config:
+      - subnet: 172.21.0.0/16
+        gateway: 172.21.0.1
