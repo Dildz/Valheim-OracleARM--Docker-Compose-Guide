@@ -28,6 +28,9 @@ services:
       - PORT=2456
     ports:
       - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
+      - "27015:27015/tcp"
     volumes:
       - "./valheim/data:/data:rw"
       - "./valheim/server:/valheim:rw"
