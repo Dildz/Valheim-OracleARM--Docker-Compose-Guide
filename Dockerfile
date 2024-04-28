@@ -1,7 +1,8 @@
 # Use Ubuntu 22.04 as base
 FROM ubuntu:22.04
 
-RUN apt update && apt install -y curl python3 sudo expect-dev software-properties-common
+RUN DEBIAN_FRONTEND=noninteractive apt update && apt install -y curl python3 sudo expect-dev software-properties-common 
+RUN DEBIAN_FRONTEND=noninteractive apt install -y libatomic1 libpulse-dev libpulse0
 
 # Download Install FEX script to temp file
 RUN curl --silent https://raw.githubusercontent.com/FEX-Emu/FEX/main/Scripts/InstallFEX.py --output /tmp/InstallFEX.py
@@ -38,7 +39,9 @@ ENV SERVER_NAME="Raspiheim" \
     WORLD_NAME="RaspiheimWorld" \
     UPDATE="false" \
     SERVER_PASS="password" \
-    SAVE_DIR="/data"
+    SAVE_DIR="/data" \
+    PORT=2456 \
+    INSTANCEID=1
 
 # Expose ports needed
 EXPOSE 2456/udp 2457/udp 2458/udp
@@ -48,6 +51,9 @@ USER root
 
 # Copy docker-entrypoint.sh to container
 COPY --chmod=755 ./docker-entrypoint.sh /docker-entrypoint.sh
+
+# Copy healthcheck.sh to container
+COPY --chmod=755 ./healthcheck.sh /healthcheck.sh
 
 # Run it
 ENTRYPOINT ["/bin/sh", "/docker-entrypoint.sh"]
