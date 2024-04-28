@@ -3,7 +3,7 @@ version: "3"
 services:
   valheim1:
     build:
-      context: ./raspiheim
+      context: ./valheim-arm64
       dockerfile: Dockerfile
     container_name: valheim1
     environment:
@@ -13,6 +13,7 @@ services:
       - PUBLIC=0
       - UPDATE=true
       - PORT=2456
+      - INSTANCEID=1
     networks:
       - valheim1_net
     ports:
@@ -24,6 +25,13 @@ services:
       - "./valheim/data:/data:rw"
       - "./valheim/server:/valheim:rw"
     restart: unless-stopped
+    init: true
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 5m
+      timeout: 30s
+      retries: 1
+      start_period: 15m
 
 networks:
   valheim1_net:
