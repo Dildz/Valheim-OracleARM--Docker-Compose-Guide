@@ -1,0 +1,14 @@
+#!/bin/bash
+set -eo pipefail
+
+files2=$(find "/home/ubuntu/valheim2/data/" -type f -name "*.log" -print0 | xargs -0 ls -lt | tail -n +2 | awk '{print $NF}')
+echo $files2 | xargs rm -f
+docker compose -f /home/ubuntu/valheim2-docker-compose.yml down
+docker compose -f /home/ubuntu/valheim2-docker-compose.yml up -d
+
+files1=$(find "/home/ubuntu/valheim1/data/" -type f -name "*.log" -print0 | xargs -0 ls -lt | tail -n +2 | awk '{print $NF}')
+echo $files1 | xargs rm -f
+docker compose -f /home/ubuntu/valheim1-docker-compose.yml down
+docker compose -f /home/ubuntu/valheim1-docker-compose.yml up -d
+
+docker system prune --force

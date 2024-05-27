@@ -14,11 +14,13 @@ services:
       - UPDATE=true
       - PORT=2456
       - INSTANCEID=2
+    networks:
+      - valheim2_net
     ports:
-      - "10.0.0.58:2456:2456/udp"
-      - "10.0.0.58:2457:2457/udp"
-      - "10.0.0.58:2458:2458/udp"
-      - "10.0.0.58:27015:27015/tcp"
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
+      - "27015:27015/tcp"
     volumes:
       - "./valheim2/data:/data:rw"
       - "./valheim2/server:/valheim:rw"
@@ -30,3 +32,10 @@ services:
       timeout: 30s
       retries: 1
       start_period: 15m
+
+networks:
+  valheim2_net:
+    name: valheim2_net
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: 10.0.0.58

@@ -71,25 +71,19 @@ This is actually not specific to Valheim, but will work for running a number of 
 3: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
     link/ether 02:00:17:00:96:7c brd ff:ff:ff:ff:ff:ff
 ```
-3. For the Docker container that you want to be run with the secondary network interface, edit the docker-compose file to create a new bridge network that your Docker container will use (make sure to choose a subnet that does not overlap with any other subnets that are currently in use on the server). The new network should have IP masquerading disabled. Also, change any port bindings in the `ports` section to start with the private IP address of your secondary NIC 
+3. For the Docker container that you want to be run with the secondary network interface, edit the docker-compose file to create a new bridge network that your Docker container will use (make sure to choose a subnet that does not overlap with any other subnets that are currently in use on the server). This can be a subnet of the subnet that gets added as a route in the next step (for example, a `/24` subnet of a `/16` subnet). Also, in the `driver_opts` section of the network, add the key `com.docker.network.bridge.host_binding_ipv4` with the private IP address of the secondary network interface as the value.
 
 (see `valheim1-docker-compose.yml` in the `examples` folder for an example of what the above changes should look like). 
 
 
-4. (for Ubuntu 18.04 and above) Add a new netplan file under `/etc/netplan` to configure Internet routes for the new network interface, as well as routing the Docker network created in step 3 to the private IP address of the secondary network interface 
+4. (for Ubuntu 18.04 and above) Add a new netplan file under `/etc/netplan` to configure Internet routes for the new network interface, as well as routing the subnet of the Docker network created in step 3 to the private IP address of the secondary network interface 
 
 (see the `51-enp1s0.yaml` in the `examples` folder for an example of what the netplan config should look like). 
 
 
 5. Run `sudo netplan apply` to apply the routes for the new network interface to the routing table (server may need to be rebooted after this step).
 
-6. Add a new rule to `iptables` to change the source ip address of all packets originating from the Docker network created in step 3 (take care to get the correct name) to the private IP address of the secondary network interface
-```
-sudo iptables -t nat -A POSTROUTING -s 172.21.0.0/16 ! -o valheim1_net -j SNAT --to-source 10.0.0.67
-```
-Note that this rule will not persist across reboots, so make sure to have it run on startup.
-
-7. For any other Docker containers that you run, if you want to bind a port you must make sure to change any port bindings in the `ports` section to start with the private IP address of the NIC that the container will be run with. By default, Docker will bind ports on all network interfaces if the host IP in the binding is not specified.
+6. For any other Docker containers that you run, if you want to bind a port you must make sure to change any port bindings in the `ports` section to start with the private IP address of the NIC that the container will be run with. By default, Docker will bind ports on all network interfaces if the host IP in the binding is not specified. Alternatively, if you create a separate bridge network for the other Docker containers, you can specify the private IP address in the `driver_opts` section with the key `com.docker.network.bridge.host_binding_ipv4`.
 
 (see `valheim2-docker-compose.yml` in the `examples` folder for an example of what this change should look like).
 

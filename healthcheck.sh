@@ -22,4 +22,10 @@ while IFS= read -r line; do
         fi
         break
     fi
+    # Immediately fail if we see a fatal signal
+    if [[ $line == *"Caught fatal signal"* ]]; then
+        exit 1
+    fi
 done < <(tac "$file_path")
+# We haven't seen a World saved line, must be stuck
+exit 1
