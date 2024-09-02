@@ -4,21 +4,46 @@ Runs SteamCMD and Valheim with [FEX](https://github.com/FEX-Emu/FEX) (Only teste
 
 ## Getting started
 
-1. Make a docker-compose.yml file (see example below) in the same folder as the Dockerfile and the rest of the scripts
-2. Create `valheim` sub-directory in the same folder and run `chmod 777 valheim` for full permissions or use `chown -R 1000:1000 valheim/`.
-3. Start via `docker compose up -d` (Starts detached, you can use `docker compose down` to stop it)
-4. The default port for your server is 2456 (UDP)
+1. Make the following directories for the Valheim container - mine are as follows:
+```
+/home/ubuntu/docker/containers/valheim/files
+```
+```
+/home/ubuntu/docker/containers/valheim/server
+```
+```
+/home/ubuntu/docker/storage/valheim/data
+```
+Make a log file for the Valheim server (to be used for processing by a Discord Bot)
+```
+/home/ubuntu/docker/logs/valheim.log
+```
+2. Clone the GitHub repository to a location of choosing:
+```
+git clone https://github.com/Dildz/valheim-arm64-lobbyboyz
+```
+3. Copy the Dockerfile, yml & sh files to /home/ubuntu/docker/containers/valheim/files
+4. Build the container with:
+```
+docker build --no-cache -t valheim-server .
+```
+5. Start the container using:
+```
+docker compose up -d
+```
+
+The default port for your server is 2456 (UDP)
 
 ### Example Docker Compose file
 ```yml
 version: "3"
 
 services:
-  valheim_local:
+  valheim:
     build:
-      context: .
+      context: /home/ubuntu/docker/containers/valheim/files
       dockerfile: Dockerfile
-    container_name: valheim_local
+    container_name: valheim
     environment:
       - SERVER_NAME=MyServer
       - WORLD_NAME=Server
@@ -32,9 +57,15 @@ services:
       - "2458:2458/udp"
       - "27015:27015/tcp"
     volumes:
-      - "./valheim/data:/data:rw"
-      - "./valheim/server:/valheim:rw"
+      - "/home/ubuntu/docker/storage/valheim/data:/data:rw"
+      - "/home/ubuntu/docker/containers/valheim/server:/valheim:rw"
+      - "/home/ubuntu/docker/logs/valheim.log:/home/ubuntu/docker/logs/valheim.log"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/bin/bash", "/home/steam/healthcheck.sh"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 ```
 
 ### Environment variables
@@ -43,7 +74,7 @@ There are environment variables that you can set in the docker-compose.yml file
 - SERVER_NAME
 - WORLD_NAME
 - SERVER_PASS (this needs to be longer than 5 characters)
-- PUBLIC (if server is publically discoverable)
+- PUBLIC (if server is publicly discoverable)
 - UPDATE
 - PORT
 
@@ -52,40 +83,5 @@ There are environment variables that you can set in the docker-compose.yml file
 - https://github.com/thijsvanloef/palworld-server-docker
 - https://github.com/jammsen/docker-palworld-dedicated-server
 
-## Running multiple instances with separate external IPs on the same server
-
-This is actually not specific to Valheim, but will work for running a number of arbitrary Docker containers, with each container on its own network. The method described here is for multiple network interfaces with each interface having its own IP address (this may or may not work for a single network interface with multiple IP addresses assigned).
-
-(Tested on Oracle Cloud with an Ubuntu 22.04 server)
-
-1. Add a new network interface to your server (it's OK for the NIC to be on the same subnet, but it needs to have a public IP). Note the private IP address (in this example, the primary NIC has an IP address of `10.0.0.58` and the secondary NIC has an IP address of `10.0.0.67`)
-
-2. In your instance, run `ip addr` to see what to see what the name of the new network interface is. Here the new instance is `enp1s0`
-```txt
-2: enp0s6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP group default qlen 1000
-    link/ether 02:00:17:01:98:27 brd ff:ff:ff:ff:ff:ff
-    inet 10.0.0.58/24 metric 100 brd 10.0.0.255 scope global enp0s6
-       valid_lft forever preferred_lft forever
-    inet6 fe80::17ff:fe01:9827/64 scope link 
-       valid_lft forever preferred_lft forever
-3: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
-    link/ether 02:00:17:00:96:7c brd ff:ff:ff:ff:ff:ff
-```
-3. For the Docker container that you want to be run with the secondary network interface, edit the docker-compose file to create a new bridge network that your Docker container will use (make sure to choose a subnet that does not overlap with any other subnets that are currently in use on the server). This can be a subnet of the subnet that gets added as a route in the next step (for example, a `/24` subnet of a `/16` subnet). Also, in the `driver_opts` section of the network, add the key `com.docker.network.bridge.host_binding_ipv4` with the private IP address of the secondary network interface as the value.
-
-(see `valheim1-docker-compose.yml` in the `examples` folder for an example of what the above changes should look like). 
-
-
-4. (for Ubuntu 18.04 and above) Add a new netplan file under `/etc/netplan` to configure Internet routes for the new network interface, as well as routing the subnet of the Docker network created in step 3 to the private IP address of the secondary network interface 
-
-(see the `51-enp1s0.yaml` in the `examples` folder for an example of what the netplan config should look like). 
-
-
-5. Run `sudo netplan apply` to apply the routes for the new network interface to the routing table (server may need to be rebooted after this step).
-
-6. For any other Docker containers that you run, if you want to bind a port you must make sure to change any port bindings in the `ports` section to start with the private IP address of the NIC that the container will be run with. By default, Docker will bind ports on all network interfaces if the host IP in the binding is not specified. Alternatively, if you create a separate bridge network for the other Docker containers, you can specify the private IP address in the `driver_opts` section with the key `com.docker.network.bridge.host_binding_ipv4`.
-
-(see `valheim2-docker-compose.yml` in the `examples` folder for an example of what this change should look like).
-
-## Based on
-- https://github.com/moby/moby/issues/30053#issuecomment-1077041045 
+## Notes
+I use ZeroTier One for connecting clients to the server as this is a private server for the LobbyBoyz Discord community.
