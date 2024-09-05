@@ -1,87 +1,143 @@
-# Valheim Arm64 Dedicated Server
+# Setting up Valheim server with docker for Ubuntu on Oracle Cloud ARM64
 
-Runs SteamCMD and Valheim with [FEX](https://github.com/FEX-Emu/FEX) (Only tested on Oracle Cloud free tier)
+Runs SteamCMD and Valheim with [FEX](https://github.com/FEX-Emu/FEX) (Only tested on Oracle Cloud ARM64 free tier)
 
-## Getting started
+## Installing Docker
+First of all you need Docker. [Official setup guide here.](https://docs.docker.com/engine/install/ubuntu/)
 
-1. Make the following directories for the Valheim container - mine are as follows:
+This guide is for ubuntu but you can find guides for other operating systems/distributions on their website.
+
+Here is a summary of the install commands...
+
+Step 1: Update the Package Index and Install Prerequisites
 ```
-/home/ubuntu/docker/containers/valheim/files
-```
-```
-/home/ubuntu/docker/containers/valheim/server
-```
-```
-/home/ubuntu/docker/storage/valheim/data
-```
-Make a log file for the Valheim server (to be used for processing by a Discord Bot)
-```
-/home/ubuntu/docker/logs/valheim.log
-```
-2. Clone the GitHub repository to a location of choosing:
-```
-git clone https://github.com/Dildz/valheim-arm64-lobbyboyz
-```
-3. Copy the Dockerfile, yml & sh files to /home/ubuntu/docker/containers/valheim/files
-4. Build the container with:
-```
-docker build --no-cache -t valheim-server .
-```
-5. Start the container using:
-```
-docker compose up -d
+sudo apt-get update
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
 ```
 
-The default port for your server is 2456 (UDP)
-
-### Example Docker Compose file
-```yml
-version: "3"
-
-services:
-  valheim:
-    build:
-      context: /home/ubuntu/docker/containers/valheim/files
-      dockerfile: Dockerfile
-    container_name: valheim
-    environment:
-      - SERVER_NAME=MyServer
-      - WORLD_NAME=Server
-      - SERVER_PASS=password
-      - PUBLIC=0
-      - UPDATE=true
-      - PORT=2456
-    ports:
-      - "2456:2456/udp"
-      - "2457:2457/udp"
-      - "2458:2458/udp"
-      - "27015:27015/tcp"
-    volumes:
-      - "/home/ubuntu/docker/storage/valheim/data:/data:rw"
-      - "/home/ubuntu/docker/containers/valheim/server:/valheim:rw"
-      - "/home/ubuntu/docker/logs/valheim.log:/home/ubuntu/docker/logs/valheim.log"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "/bin/bash", "/home/steam/healthcheck.sh"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
+Step 2: Add Docker’s Official GPG Key
+```
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 ```
 
-### Environment variables
+Step 3: Set Up the Stable Repository
+```
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
 
-There are environment variables that you can set in the docker-compose.yml file
-- SERVER_NAME
-- WORLD_NAME
-- SERVER_PASS (this needs to be longer than 5 characters)
-- PUBLIC (if server is publicly discoverable)
-- UPDATE
-- PORT
+Step 4: Update the Package Index Again
+```
+sudo apt-get update
+```
+
+Step 5: Install latest Docker Engine
+```
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Step 6: Enable and Start Docker
+```
+sudo systemctl enable docker
+```
+```
+sudo systemctl start docker
+```
+
+Step 5: Add user to the docker group & activate the changes
+```
+sudo usermod -aG docker $USER
+```
+```
+newgrp docker
+```
+
+You can verify your Docker installation by running `docker --version` or by running `docker run hello-world`
+
+## Pre-Setup
+Use the pre-setup.sh file found in [Releases](https://github.com/Dildz/valheim-arm64-lobbyboyz) to create the docker folders, clone the Github repository, copy the required files into the files directory and build the container.
+
+Download & place the pre_setup.sh file in your home folder & run with:
+```
+cd ~
+```
+```
+./pre-setup.sh
+```
+
+It will take a while, but once it is finished you can safely remove this file as you are now ready for the next steps.
+
+## Starting the docker container
+Next we are going start the container for the 1st time with the following commands:
+```
+cd $HOME/docker/containers/valheim/files
+```
+```
+docker-compose up -d && docker-compose logs -f
+```
+
+## Post-Setup
+Once the server has finished starting for the 1st time we are going to exit out of the live-logs by pressing **Ctrl + C**
+
+Then we are going to run the post-setup.sh script in the github repo folder:
+```
+cd $HOME/github-repos/valheim-arm64-lobbyboyz
+```
+```
+./post-setup.sh
+```
+
+This will create a cron-job that restarts the Valheim server every day at midnight.
+
+## Notes
+- I use ZeroTier One for connecting clients to my server as this is a private server for the LobbyBoyz Discord community.
+- You are welcome to fork this repository and modify according to your own needs.
+- All files are clearly commented & you are expected to modify names/ports/passwords/directory locations etc according to your setup.
+
+If you make any mistakes or any step fails & you would like to start over - use the following set of commands run from within the files directory:
+```
+cd $HOME/docker/containers/valheim/files
+```
+Stop & remove the container:
+```
+docker-compose down
+```
+Remove the container image:
+```
+docker rmi valheim
+```
+Clean up build files:
+```
+docker builder prune
+```
+Remove the contents of the container's server & data folders:
+```
+sudo rm -rf /home/ubuntu/docker/containers/valheim/server/*
+```
+```
+sudo rm -rf /home/ubuntu/docker/containers/valheim/data/*
+```
+
+You can now re-run the build command as follows:
+```
+docker-compose build --no-cache
+```
+When completed, run:
+```
+docker-compose up -d
+```
+```
+docker-compose logs -f
+```
 
 ## Based on
 - https://github.com/TeriyakiGod/steamcmd-docker-arm64
 - https://github.com/thijsvanloef/palworld-server-docker
 - https://github.com/jammsen/docker-palworld-dedicated-server
-
-## Notes
-I use ZeroTier One for connecting clients to the server as this is a private server for the LobbyBoyz Discord community.
+- https://github.com/hadizh/valheim-arm64

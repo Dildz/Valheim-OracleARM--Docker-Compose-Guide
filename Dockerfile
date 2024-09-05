@@ -1,6 +1,16 @@
+##
+## Dockerfile
+## VALHEIM ARM64 Container
+##
+
 # Use Ubuntu 22.04 as base
 FROM ubuntu:22.04
 
+# Set timezone environment variables (change the timezone to your system's location)
+ENV TZ=Africa/Johannesburg
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install necessary packages
 RUN DEBIAN_FRONTEND=noninteractive apt update && apt install -y curl python3 sudo expect-dev software-properties-common 
 RUN DEBIAN_FRONTEND=noninteractive apt install -y libatomic1 libpulse-dev libpulse0
 
@@ -33,12 +43,12 @@ RUN curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.t
 # Copy init-server.sh to container
 COPY --chmod=755 ./init-server.sh /home/steam/init-server.sh
 
-# Set up some default environment variables
-ENV SERVER_NAME="Raspiheim" \
+# Set default environment variables (make sure these match the values in the docker-compose.yml file)
+ENV SERVER_NAME="MyAwesomeServer" \
     PUBLIC=0 \
-    WORLD_NAME="RaspiheimWorld" \
-    UPDATE="false" \
-    SERVER_PASS="password" \
+    WORLD_NAME="MyAwesomeWorld" \
+    SERVER_PASS="MySuperSecretPassword" \
+    UPDATE="true" \
     SAVE_DIR="/data" \
     PORT=2456 \
     INSTANCEID=1
@@ -52,9 +62,7 @@ USER root
 # Copy docker-entrypoint.sh to container
 COPY --chmod=755 ./docker-entrypoint.sh /docker-entrypoint.sh
 
-# Copy healthcheck.sh to container
-COPY --chmod=755 ./healthcheck.sh /healthcheck.sh
-
 # Run it
 ENTRYPOINT ["/bin/sh", "/docker-entrypoint.sh"]
 CMD ["/home/steam/init-server.sh"]
+

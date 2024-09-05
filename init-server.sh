@@ -1,6 +1,11 @@
-#!/bin/bash
-
 # init-server.sh
+
+## This script is used to start the Valheim server with the specified settings.
+## It checks for read/write permissions, SteamCMD updates, and installs or updates the Valheim server.
+## Once the server is installed or updated, it starts the server with the specified settings.
+## Modify the log file path to match the location in the pre-setup.sh script.
+
+#!/bin/bash
 
 set -e
 export PATH=/usr/local/bin/:$PATH
@@ -38,7 +43,7 @@ function main() {
   # Change to the server directory
   cd /valheim
 
-  # Start the Valheim server with the specified settings
+  # Start the Valheim server with the specified settings (change the log file path to match the location in the pre-setup.sh script)
   log_file="/home/ubuntu/docker/logs/valheim.log"
   FEXBash "./valheim_server.x86_64 -nographics -batchmode -instanceid $INSTANCEID -name \"$SERVER_NAME\" -port $PORT -public $PUBLIC -world \"$WORLD_NAME\" -password \"$SERVER_PASS\" -savedir $SAVE_DIR -logFile /dev/stdout 2>&1 | tee -a $log_file -saveinterval 600 -backups 0"
 }

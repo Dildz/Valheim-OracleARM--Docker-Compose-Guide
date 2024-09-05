@@ -1,0 +1,24 @@
+Build Command (run inside files folder):
+docker-compose build --no-cache
+
+Start the container:
+docker-compose up -d
+
+View logs:
+docker-compose logs -f
+docker logs valheim -f
+
+Stop the container:
+docker-compose down
+
+List all images:
+docker images -a
+
+Remove an image:
+docker rmi valheim
+
+Remove all unused images:
+docker image prune
+
+Remove all unused containers:
+docker builder prune
