@@ -87,7 +87,7 @@ Once the server has finished starting for the 1st time we are going to exit out 
 
 Then we are going to run the post-setup.sh script in the github repo folder:
 ```
-cd $HOME/github-repos/valheim-arm64-lobbyboyz
+cd $HOME/github-repos/Valheim-OracleARM--Docker-Compose-Guide
 ```
 ```
 ./post-setup.sh
